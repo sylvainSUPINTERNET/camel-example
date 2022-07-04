@@ -5,8 +5,18 @@
        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
     ">
 
-        <bean id="jmsConnectionFactory"
-                class="org.apache.activemq.ActiveMQSslConnectionFactory">
+
+    <!-- transformers and processors init-->
+
+    <bean id="csvProcessor" class="com.example.demo4.processors.MyProcessor"/>
+    <bean id="ABean" class="com.example.demo4.transformers.MyTransformer"/>
+
+
+    <!-- TODO BEANS FOR CONNECTION FACTORY WITH MQ IBM client-->
+    <!-- how to convert connection factory class to XML -> http://www.masterspringboot.com/camel/integration-with-ibm-mq-made-simple-with-camel/ -->
+
+        <bean id="jmsConnectionFactoryActiveMQ"
+                class="org.apache.activemq.ActiveMQSslConnectionFactory"> <!-- can use ActiveMQConnectionFactory without ssl if u need -->
             <property name="brokerURL" value="tcp://localhost:61616" /> <!-- can be ssl://-->
             <property name="userName" value="admin"/>
             <property name="password" value="admin"/>
@@ -17,10 +27,10 @@
         <bean id="pooledConnectionFactory"
                 class="org.apache.activemq.pool.PooledConnectionFactory">
             <property name="maxConnections" value="8" />
-            <property name="connectionFactory" ref="jmsConnectionFactory" />
+            <property name="connectionFactory" ref="jmsConnectionFactoryActiveMQ" />
         </bean>
 
-        <bean id="jmsConfig" class="org.apache.camel.component.jms.JmsConfiguration">
+        <bean id="jmsConfigActiveMQ" class="org.apache.camel.component.jms.JmsConfiguration">
             <property name="connectionFactory" ref="pooledConnectionFactory"/>
             <property name="transacted" value="false"/>
             <property name="concurrentConsumers" value="10"/>
@@ -28,7 +38,7 @@
 
         <bean id="activemqssl"
                 class="org.apache.activemq.camel.component.ActiveMQComponent">
-            <property name="configuration" ref="jmsConfig"/>
+            <property name="configuration" ref="jmsConfigActiveMQ"/>
         </bean>
 
 
@@ -37,7 +47,11 @@
         <!-- example using mqtt -->
         <route id="mqtt-test">
             <from uri="mqtt:IoT?host=tcp://localhost:1883&amp;subscribeTopicName=iot-mqtt"/>
-            <log message="The message contains ${body}" loggingLevel="INFO" customId="true" id="iot_log">
+            <transform>
+                <method bean="ABean" method="toHello"/>
+            </transform>
+            <process ref="csvProcessor"/>
+            <log message="The message contains ${body} - ${date:now:yyyy-MM-dd'T'HH:mm:ss}" loggingLevel="INFO" customId="true" id="iot_log">
                 <description>Logs all the incoming MQTT messages. This is just
             for verification purpouses.</description>
             </log>
@@ -47,7 +61,7 @@
         <!-- example using ACTIVEMQ -->
         <route id="activemq-test">
             <from uri="activemqssl:queue:HELLO.WORLD"/>
-            <log message="The message contains ${body}" loggingLevel="INFO" customId="true" id="activemq_log">
+            <log message="The message contains ${body} - ${date:now:yyyy-MM-dd'T'HH:mm:ss}" loggingLevel="INFO" customId="true" id="activemq_log">
                 <description>Logs all the incoming MQTT messages. This is just
             for verification purpouses.</description>
             </log>
