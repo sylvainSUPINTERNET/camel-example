@@ -12,6 +12,47 @@
     <bean id="ABean" class="com.example.demo4.transformers.MyTransformer"/>
 
 
+
+    <!-- mq ibm TODO -> add other info such as CCSID etc-->
+       <bean id="mqConnectionFactory" class="com.ibm.mq.jms.MQConnectionFactory">
+           
+      <property name="hostName" value="localhost"/>
+           
+      <property name="port" value="1414"/>
+           
+      <property name="queueManager" value="QM1"/>
+           
+      <property name="channel" value="DEV.APP.SVRCONN"/>
+           
+      <property name="transportType" value="1"/>
+           
+      <property name="shareConvAllowed" value="0"/>
+         
+   </bean>
+      
+   <bean id="mqcredential" class="org.springframework.jms.connection.UserCredentialsConnectionFactoryAdapter">
+           
+      <property name="targetConnectionFactory" ref="mqConnectionFactory"/>
+           
+      <property name="username" value="app"/>
+           
+      <property name="password" value=""/>
+         
+   </bean>
+      
+   <bean id="mq" class="org.apache.camel.component.jms.JmsComponent">
+           
+      <property name="connectionFactory" ref="mqcredential"/>
+           
+      <property name="maxConcurrentConsumers" value="1"/>
+           
+      <property name="cacheLevelName" value="CACHE_CONSUMER"/>
+         
+   </bean>
+<!--end  mq ibm-->
+
+
+
     <!-- TODO BEANS FOR CONNECTION FACTORY WITH MQ IBM client-->
     <!-- how to convert connection factory class to XML -> http://www.masterspringboot.com/camel/integration-with-ibm-mq-made-simple-with-camel/ -->
 
